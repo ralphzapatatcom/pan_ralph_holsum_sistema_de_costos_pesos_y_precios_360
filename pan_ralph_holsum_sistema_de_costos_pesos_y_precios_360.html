@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAN RALPH HOLSUM - Sistema de Costos, Pesos & Precios (94 Variables 360)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                        },
+                        industrial: {
+                            800: '#111827',
+                            900: '#0b0f19',
+                            950: '#05070c',
+                            card: '#161f30',
+                            border: '#24324a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #24324a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ca8a04;
+        }
+        .glow-gold {
+            box-shadow: 0 0 18px rgba(234, 179, 8, 0.22);
+        }
+        .glow-blue {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-industrial-950 text-slate-100 antialiased selection:bg-gold-500 selection:text-black">
+
+    <!-- HEADER / BARRA INDUSTRIAL NAVEGACIÓN -->
+    <header class="bg-industrial-900 border-b border-industrial-border sticky top-0 z-50 px-4 py-3 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Logo & Titular -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-gold-600 to-amber-300 flex items-center justify-center text-industrial-950 font-black text-2xl shadow-md glow-gold">
+                    <i class="fa-solid fa-bread-slice"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-slate-50 flex items-center gap-2">
+                        PAN RALPH HOLSUM
+                        <span class="text-xs bg-gold-500/20 text-gold-400 border border-gold-500/40 px-2 py-0.5 rounded font-mono">360 BROWSER • 94 VARS</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Modelo Industrial de Costeo, Cálculo de Pesos en Gramos & Simulador de Precios</p>
+                </div>
+            </div>
+
+            <!-- Ajustes Globales Rápidos -->
+            <div class="flex flex-wrap items-center gap-3">
+                
+                <!-- Selector Moneda -->
+                <div class="flex items-center bg-industrial-800 border border-industrial-border rounded-lg px-2 py-1">
+                    <i class="fa-solid fa-coins text-gold-400 text-xs mr-2"></i>
+                    <select id="currency-select" onchange="updateCurrency()" class="bg-transparent text-xs text-slate-200 focus:outline-none font-semibold cursor-pointer">
+                        <option value="USD" class="bg-industrial-900">USD ($)</option>
+                        <option value="EUR" class="bg-industrial-900">EUR (€)</option>
+                        <option value="MXN" class="bg-industrial-900">MXN ($)</option>
+                        <option value="COP" class="bg-industrial-900">COP ($)</option>
+                    </select>
+                </div>
+
+                <!-- Margen Utilidad Rápido -->
+                <div class="flex items-center bg-industrial-800 border border-industrial-border rounded-lg px-3 py-1">
+                    <span class="text-xs text-slate-400 mr-2 font-medium">Margen Neto:</span>
+                    <input type="number" id="quick-margin-input" min="0" max="100" step="0.5" value="25.0" onchange="quickUpdateMargin(this.value)" class="w-16 bg-industrial-950 border border-gold-500/50 text-gold-400 text-xs font-bold font-mono rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-gold-400">
+                    <span class="text-xs text-gold-400 ml-1">%</span>
+                </div>
+
+                <!-- Botón Crear Nueva Variable -->
+                <button onclick="openCreateVarModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-500/50 transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-plus"></i> Nueva Variable
+                </button>
+
+                <!-- Restablecer Variables -->
+                <button onclick="resetDefaults()" title="Restablecer las 94 variables a valores originales" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left text-amber-400"></i> Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVEGACIÓN PANTALLAS / PANELES -->
+    <div class="bg-industrial-900/90 border-b border-industrial-border sticky top-[65px] z-40 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto scrollbar-none py-1.5">
+            <button onclick="switchTab('tab-dashboard')" id="btn-tab-dashboard" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition bg-gold-500 text-industrial-950 shadow-md">
+                <i class="fa-solid fa-chart-pie"></i> Dashboard & Precio Final / Pesos
+            </button>
+            <button onclick="switchTab('tab-variables')" id="btn-tab-variables" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-industrial-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i> Panel 360 Variables (<span id="tab-var-count">94</span>)
+            </button>
+            <button onclick="switchTab('tab-profit')" id="btn-tab-profit" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-industrial-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-calculator"></i> Utilidades & Escenarios
+            </button>
+            <button onclick="switchTab('tab-reports')" id="btn-tab-reports" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-industrial-800 transition flex items-center gap-2">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Reportes & Moneda Extranjera
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- ================================================================================= -->
+        <!-- PANTALLA 1: DASHBOARD GENERAL & CALCULADORA PRECIO FINAL + PESO EN GRAMOS         -->
+        <!-- ================================================================================= -->
+        <section id="tab-dashboard" class="tab-content space-y-6">
+            
+            <!-- Grid Destacado de KPIs Principales -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                
+                <!-- KPI 1: PRECIO FINAL SUGERIDO -->
+                <div class="bg-industrial-card border border-gold-500/50 rounded-xl p-4 relative overflow-hidden glow-gold sm:col-span-2 lg:col-span-1">
+                    <div class="absolute -right-3 -bottom-3 text-gold-500/10 text-7xl font-black"><i class="fa-solid fa-tag"></i></div>
+                    <div class="text-[11px] uppercase tracking-wider text-gold-400 font-bold mb-1 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check"></i> Precio Final Unidad
+                    </div>
+                    <div class="text-3xl font-black font-mono text-white" id="kpi-final-price">$0.00</div>
+                    <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
+                        <span>Margen: <strong class="text-gold-400" id="kpi-net-profit-pct">25.0%</strong></span>
+                        <span id="kpi-profit-per-unit" class="text-emerald-400 font-bold">+$0.00/u</span>
+                    </div>
+                </div>
+
+                <!-- KPI 2: PESO FINAL Y MASA CRUDA EN GRAMOS -->
+                <div class="bg-industrial-card border border-amber-500/40 rounded-xl p-4 relative overflow-hidden glow-gold">
+                    <div class="absolute -right-3 -bottom-3 text-amber-500/10 text-7xl font-black"><i class="fa-solid fa-weight-scale"></i></div>
+                    <div class="text-[11px] uppercase tracking-wider text-amber-400 font-bold mb-1 flex items-center gap-1">
+                        <i class="fa-solid fa-scale-balanced"></i> Peso Neto Horneado
+                    </div>
+                    <div class="text-3xl font-black font-mono text-white" id="kpi-net-weight">539.85 g</div>
+                    <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
+                        <span>Masa Cruda (v13): <strong class="text-slate-200" id="kpi-raw-weight">610g</strong></span>
+                        <span>Merma (v14): <strong class="text-rose-400" id="kpi-baking-loss">11.5%</strong></span>
+                    </div>
+                </div>
+
+                <!-- KPI 3: COSTO UNITARIO PRODUCCIÓN -->
+                <div class="bg-industrial-card border border-industrial-border rounded-xl p-4 relative overflow-hidden">
+                    <div class="absolute -right-3 -bottom-3 text-blue-500/10 text-7xl font-black"><i class="fa-solid fa-industry"></i></div>
+                    <div class="text-[11px] uppercase tracking-wider text-blue-400 font-bold mb-1">Costo Unit. Producción</div>
+                    <div class="text-3xl font-black font-mono text-white" id="kpi-unit-cost">$0.00</div>
+                    <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
+                        <span>Costo por Gramo:</span>
+                        <span id="kpi-cost-per-gram" class="text-blue-300 font-mono font-semibold">$0.0000/g</span>
+                    </div>
+                </div>
+
+                <!-- KPI 4: PRECIO DISTRIBUIDOR -->
+                <div class="bg-industrial-card border border-industrial-border rounded-xl p-4 relative overflow-hidden">
+                    <div class="absolute -right-3 -bottom-3 text-purple-500/10 text-7xl font-black"><i class="fa-solid fa-store"></i></div>
+                    <div class="text-[11px] uppercase tracking-wider text-purple-400 font-bold mb-1">Precio Mayorista</div>
+                    <div class="text-3xl font-black font-mono text-white" id="kpi-wholesale-price">$0.00</div>
+                    <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
+                        <span>Deducción Comercial:</span>
+                        <span class="text-rose-400 font-semibold" id="kpi-variable-deductions">-24.3%</span>
+                    </div>
+                </div>
+
+                <!-- KPI 5: VOLUMEN MENSUAL NETO -->
+                <div class="bg-industrial-card border border-industrial-border rounded-xl p-4 relative overflow-hidden">
+                    <div class="absolute -right-3 -bottom-3 text-emerald-500/10 text-7xl font-black"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <div class="text-[11px] uppercase tracking-wider text-emerald-400 font-bold mb-1">Volumen Producción</div>
+                    <div class="text-2xl font-black font-mono text-white" id="kpi-monthly-volume">0 u</div>
+                    <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
+                        <span>OEE: <strong class="text-emerald-400" id="kpi-oee-display">82%</strong></span>
+                        <span>Rechazo: <strong class="text-rose-400" id="kpi-reject-display">1.8%</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico Donut de Estructura de Costos & Desglose de Gastos -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Estructura de Costos por Paquete (2 Columnas) -->
+                <div class="lg:col-span-2 bg-industrial-card border border-industrial-border rounded-xl p-5 space-y-4">
+                    <div class="flex justify-between items-center border-b border-industrial-border pb-3">
+                        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-gold-400"></i> Estructura de Costos por Unidad de Pan
+                        </h2>
+                        <span class="text-xs text-slate-400 font-mono">Prorrateo Industrial Directo</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <!-- Chart Container -->
+                        <div class="relative h-64 flex items-center justify-center">
+                            <canvas id="costStructureChart"></canvas>
+                        </div>
+
+                        <!-- Numeric Table breakdown -->
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between items-center p-2 rounded bg-industrial-900/80 border-l-4 border-amber-500">
+                                <span class="text-slate-300">1. Materias Primas e Insumos (inc. 7.5% volatilidad)</span>
+                                <span class="font-bold font-mono text-slate-100" id="cost-raw-material">$0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded bg-industrial-900/80 border-l-4 border-blue-500">
+                                <span class="text-slate-300">2. Empaque e Insumos de Planta</span>
+                                <span class="font-bold font-mono text-slate-100" id="cost-packaging">$0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded bg-industrial-900/80 border-l-4 border-indigo-500">
+                                <span class="text-slate-300">3. Mano de Obra Directa / Indirecta + Ley</span>
+                                <span class="font-bold font-mono text-slate-100" id="cost-labor">$0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded bg-industrial-900/80 border-l-4 border-cyan-500">
+                                <span class="text-slate-300">4. Energéticos, Vapor & Servicios Públicos</span>
+                                <span class="font-bold font-mono text-slate-100" id="cost-energy">$0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded bg-industrial-900/80 border-l-4 border-purple-500">
+                                <span class="text-slate-300">5. Control de Calidad y Ensayos Lab</span>
+                                <span class="font-bold font-mono text-slate-100" id="cost-quality">$0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded bg-industrial-900/80 border-l-4 border-rose-500">
+                                <span class="text-slate-300">6. Costos Fijos, Depreciación & Canon</span>
+                                <span class="font-bold font-mono text-slate-100" id="cost-fixed">$0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded bg-industrial-900 border border-gold-500/40 font-bold">
+                                <span class="text-gold-400">TOTAL COSTO PRODUCCIÓN / UNIDAD</span>
+                                <span class="text-gold-400 text-sm font-mono" id="cost-total-production">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Cadena de Precio y Deducciones Comercial -->
+                <div class="bg-industrial-card border border-industrial-border rounded-xl p-5 space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div class="border-b border-industrial-border pb-3 mb-3">
+                            <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-calculator text-gold-400"></i> Cadena de Precio & Deducciones
+                            </h2>
+                            <p class="text-xs text-slate-400">Absorción de gastos variables comerciales y margen</p>
+                        </div>
+
+                        <div class="space-y-2.5 text-xs">
+                            <div class="flex justify-between items-center pb-1 border-b border-industrial-border/50">
+                                <span class="text-slate-400">Costo Directo Producción:</span>
+                                <span class="font-mono text-slate-200 font-bold" id="pricing-base-cost">$0.00</span>
+                            </div>
+
+                            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">Gastos Variables Comerciales</div>
+                            
+                            <div class="pl-2 border-l-2 border-industrial-border space-y-1 text-slate-300 text-[11px]">
+                                <div class="flex justify-between">
+                                    <span>Comisiones Ventas (Var 77):</span>
+                                    <span class="font-mono text-amber-400" id="v-comm">5.0%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Devoluciones Góndola (Var 78):</span>
+                                    <span class="font-mono text-amber-400" id="v-returns">4.0%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Merma Logística (Var 84):</span>
+                                    <span class="font-mono text-amber-400" id="v-loss">0.8%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Comisión Pasarela/Tarjeta (Var 83):</span>
+                                    <span class="font-mono text-amber-400" id="v-cards">2.5%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Descuento Supermercados (Var 85):</span>
+                                    <span class="font-mono text-amber-400" id="v-supermarket">12.0%</span>
+                                </div>
+                                <div class="flex justify-between font-bold text-slate-200 pt-1 border-t border-industrial-border/40">
+                                    <span>Total Deducciones Canal:</span>
+                                    <span class="font-mono text-rose-400" id="v-total-deductions">24.3%</span>
+                                </div>
+                            </div>
+
+                            <div class="pt-2 border-t border-industrial-border space-y-1.5">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="font-semibold text-gold-400">Margen Utilidad Neta (Var 90):</span>
+                                    <span class="font-extrabold font-mono text-gold-400 text-sm" id="pricing-target-profit">25.0%</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-slate-300">Flete Logístico / Unidad (Var 76):</span>
+                                    <span class="font-mono text-slate-200" id="pricing-freight">$0.12</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cuadro Fórmula -->
+                    <div class="bg-industrial-900 border border-gold-500/30 rounded-lg p-3 space-y-1">
+                        <div class="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Fórmula Industrial de Venta</div>
+                        <div class="text-[10px] text-slate-300 font-mono leading-snug">
+                            Precio = CostoProd / (1 - %Deducc - %Utilidad) + Flete
+                        </div>
+                        <div class="text-xs font-bold text-gold-400 pt-1 flex justify-between border-t border-industrial-border/50">
+                            <span>Precio Sugerido Final:</span>
+                            <span class="text-sm font-mono text-white" id="pricing-final-display">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Resumen Financiero CAPEX y Capital de Trabajo -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-industrial-card border border-industrial-border rounded-xl p-4 flex items-center space-x-4">
+                    <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg text-2xl"><i class="fa-solid fa-building-columns"></i></div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-medium">CAPEX Inicial Total (Var 94)</div>
+                        <div class="text-xl font-bold font-mono text-slate-100" id="capex-display">$385,000.00</div>
+                        <div class="text-[10px] text-slate-500">Inversión Equipos e Instalaciones</div>
+                    </div>
+                </div>
+
+                <div class="bg-industrial-card border border-industrial-border rounded-xl p-4 flex items-center space-x-4">
+                    <div class="p-3 bg-amber-500/10 text-amber-400 rounded-lg text-2xl"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-medium">Capital Trabajo Requerido (Var 93)</div>
+                        <div class="text-xl font-bold font-mono text-slate-100" id="working-capital-display">$0.00</div>
+                        <div class="text-[10px] text-slate-500">Basado en ciclo de 45 días de caja</div>
+                    </div>
+                </div>
+
+                <div class="bg-industrial-card border border-industrial-border rounded-xl p-4 flex items-center space-x-4">
+                    <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg text-2xl"><i class="fa-solid fa-sack-dollar"></i></div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-medium">Utilidad Neta Mensual Estimada</div>
+                        <div class="text-xl font-bold font-mono text-emerald-400" id="monthly-profit-display">$0.00</div>
+                        <div class="text-[10px] text-slate-500">Retorno Neto Mensual de Planta</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================================================================================= -->
+        <!-- PANTALLA 2: GESTIÓN COMPLETA 360° DE LAS 94 VARIABLES (CRUD COMPLETO)             -->
+        <!-- ================================================================================= -->
+        <section id="tab-variables" class="tab-content hidden space-y-6">
+            
+            <!-- Barra de Filtro, Búsqueda y Creación -->
+            <div class="bg-industrial-card border border-industrial-border rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-[115px] z-30 shadow-md">
+                
+                <!-- Selector Categoría -->
+                <div class="flex items-center space-x-2 w-full md:w-auto">
+                    <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-filter text-gold-400"></i> Categoría:
+                    </label>
+                    <select id="var-category-filter" onchange="filterVariables()" class="bg-industrial-900 border border-industrial-border text-xs rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-gold-500 w-full md:w-64">
+                        <option value="ALL">Todas las Categorías</option>
+                        <option value="MP">1. Materias Primas Directas</option>
+                        <option value="PROC">2. Ratios Técnicos y Pesos Proceso</option>
+                        <option value="EMP">3. Empaque e Insumos Planta</option>
+                        <option value="OPER">4. Tiempos y Operaciones</option>
+                        <option value="ENE">5. Energéticos y Servicios</option>
+                        <option value="LAB">6. Control Calidad / Lab</option>
+                        <option value="MO">7. Mano de Obra y Prestaciones</option>
+                        <option value="CAPEX">8. Inversión Inicial (CAPEX)</option>
+                        <option value="FIXED">9. Costos Fijos & Depreciación</option>
+                        <option value="COM">10. Comercial, Logística & Impuestos</option>
+                    </select>
+                </div>
+
+                <!-- Buscador de Variables -->
+                <div class="relative w-full md:w-72">
+                    <input type="text" id="var-search-input" onkeyup="filterVariables()" placeholder="Buscar variable o # N°..." class="w-full bg-industrial-900 border border-industrial-border rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-gold-500">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                </div>
+
+                <!-- Contador & Nueva Variable -->
+                <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                    <div class="text-xs text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
+                        Variables: <span id="var-count-badge" class="font-bold text-gold-400 bg-industrial-900 px-2 py-0.5 rounded border border-industrial-border font-mono">94</span>
+                    </div>
+                    <button onclick="openCreateVarModal()" class="bg-gold-500 text-industrial-950 hover:bg-gold-400 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-plus-circle"></i> Agregar Variable
+                    </button>
+                </div>
+            </div>
+
+            <!-- Rejilla Dinámica de Tarjetas de Variables -->
+            <div id="variables-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Se puebla mediante JS -->
+            </div>
+
+        </section>
+
+
+        <!-- ================================================================================= -->
+        <!-- PANTALLA 3: AJUSTES DE UTILIDAD NETA & ESCENARIOS FINANCIEROS                     -->
+        <!-- ================================================================================= -->
+        <section id="tab-profit" class="tab-content hidden space-y-6">
+            
+            <!-- Controles Directos de Utilidad -->
+            <div class="bg-industrial-card border border-gold-500/40 rounded-xl p-6 glow-gold space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-industrial-border pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-gold-400"></i> Control Directo del Margen de Utilidad Neta
+                        </h2>
+                        <p class="text-xs text-slate-400">Modifica, incrementa o elimina totalmente el margen de beneficio sobre el producto final.</p>
+                    </div>
+
+                    <!-- Botones Rápidos -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="setProfitMargin(0)" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                            <i class="fa-solid fa-ban"></i> Eliminar Utilidad (0%)
+                        </button>
+                        <button onclick="setProfitMargin(15)" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                            15.0% (Modelo Estándar)
+                        </button>
+                        <button onclick="setProfitMargin(25)" class="bg-gold-500 text-industrial-950 hover:bg-gold-400 text-xs font-black px-3 py-1.5 rounded-lg transition shadow-md">
+                            25.0% (Objetivo Requerido)
+                        </button>
+                        <button onclick="setProfitMargin(35)" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                            35.0% (Alta Rentabilidad)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Slider Interactivo -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center pt-2">
+                    <div class="md:col-span-3 space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-300 font-semibold">Margen de Utilidad Neta Personalizado:</span>
+                            <span id="slider-margin-val" class="font-mono text-gold-400 font-black text-sm">25.0%</span>
+                        </div>
+                        <input type="range" id="profit-slider" min="0" max="60" step="0.5" value="25.0" oninput="onProfitSliderChange(this.value)" class="w-full h-2.5 bg-industrial-900 rounded-lg appearance-none cursor-pointer accent-gold-500">
+                        <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                            <span>0% (Al Costo)</span>
+                            <span>15%</span>
+                            <span>25% (Actual)</span>
+                            <span>40%</span>
+                            <span>60% (Máximo)</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-industrial-900 rounded-xl p-3 border border-industrial-border text-center space-y-1">
+                        <div class="text-[10px] uppercase text-slate-400 font-semibold">Precio FinalResultante</div>
+                        <div class="text-2xl font-black font-mono text-gold-400" id="slider-result-price">$0.00</div>
+                        <div class="text-[10px] text-slate-400" id="slider-profit-dollar">Ganancia: +$0.00 / pan</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulador de Sensibilidad Escenarios -->
+            <div class="bg-industrial-card border border-industrial-border rounded-xl p-6 space-y-6">
+                <div class="border-b border-industrial-border pb-3">
+                    <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-gold-400"></i> Simulador de Sensibilidad & Análisis Escenarios
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Evalúa el impacto inmediato de cambios clave en Eficiencia OEE, Volatilidad de Harina y Mermas de Horneo.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Control 1: OEE -->
+                    <div class="bg-industrial-900 p-4 rounded-xl border border-industrial-border space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-200">Eficiencia OEE (Var 36)</label>
+                            <span class="text-xs font-mono text-blue-400 font-bold" id="sim-oee-val">82%</span>
+                        </div>
+                        <input type="range" id="sim-oee" min="50" max="100" step="1" value="82" oninput="runSimulation()" class="w-full h-1.5 bg-industrial-800 rounded appearance-none accent-blue-500 cursor-pointer">
+                        <p class="text-[11px] text-slate-400">Un OEE menor reduce la producción total y encarece la absorción de mano de obra y costos fijos por unidad.</p>
+                    </div>
+
+                    <!-- Control 2: Volatilidad -->
+                    <div class="bg-industrial-900 p-4 rounded-xl border border-industrial-border space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-200">Holgura Volatilidad (Var 91)</label>
+                            <span class="text-xs font-mono text-amber-400 font-bold" id="sim-volatility-val">7.5%</span>
+                        </div>
+                        <input type="range" id="sim-volatility" min="0" max="25" step="0.5" value="7.5" oninput="runSimulation()" class="w-full h-1.5 bg-industrial-800 rounded appearance-none accent-amber-500 cursor-pointer">
+                        <p class="text-[11px] text-slate-400">Margen de amortiguación ante aumentos de precios de Harina, Azúcar y Manteca.</p>
+                    </div>
+
+                    <!-- Control 3: Rechazo -->
+                    <div class="bg-industrial-900 p-4 rounded-xl border border-industrial-border space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-200">Pan Rechazado / Merma (Var 37)</label>
+                            <span class="text-xs font-mono text-rose-400 font-bold" id="sim-reject-val">1.8%</span>
+                        </div>
+                        <input type="range" id="sim-reject" min="0" max="10" step="0.1" value="1.8" oninput="runSimulation()" class="w-full h-1.5 bg-industrial-800 rounded appearance-none accent-rose-500 cursor-pointer">
+                        <p class="text-[11px] text-slate-400">Panes descartados por quemado, deformidad o rebanado defectuoso.</p>
+                    </div>
+
+                </div>
+
+                <!-- Tabla Comparativa de Escenario -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-300 border border-industrial-border rounded-lg">
+                        <thead class="bg-industrial-900 text-slate-400 uppercase font-mono text-[10px] border-b border-industrial-border">
+                            <tr>
+                                <th class="p-3">Métrica Financiera / Técnica</th>
+                                <th class="p-3">Escenario Base Actual</th>
+                                <th class="p-3 text-gold-400">Escenario Simulado</th>
+                                <th class="p-3">Diferencia Visual</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-industrial-border bg-industrial-card font-mono">
+                            <tr>
+                                <td class="p-3 font-semibold text-slate-200 font-sans">Volumen Producción Mensual</td>
+                                <td class="p-3" id="sim-base-vol">0 u</td>
+                                <td class="p-3 text-gold-400 font-bold" id="sim-sim-vol">0 u</td>
+                                <td class="p-3" id="sim-diff-vol">0 u</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold text-slate-200 font-sans">Costo Unitario de Producción</td>
+                                <td class="p-3" id="sim-base-cost">$0.00</td>
+                                <td class="p-3 text-gold-400 font-bold" id="sim-sim-cost">$0.00</td>
+                                <td class="p-3" id="sim-diff-cost">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold text-slate-200 font-sans">Precio Final Sugerido</td>
+                                <td class="p-3" id="sim-base-price">$0.00</td>
+                                <td class="p-3 text-gold-400 font-bold" id="sim-sim-price">$0.00</td>
+                                <td class="p-3" id="sim-diff-price">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold text-slate-200 font-sans">Utilidad Neta Mensual Total</td>
+                                <td class="p-3 text-emerald-400 font-bold" id="sim-base-profit">$0.00</td>
+                                <td class="p-3 text-emerald-400 font-bold" id="sim-sim-profit">$0.00</td>
+                                <td class="p-3" id="sim-diff-profit">$0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================================================================================= -->
+        <!-- PANTALLA 4: ANÁLISIS CAMBIARIO, MONEDAS & REPORTES INDUSTRIALES                   -->
+        <!-- ================================================================================= -->
+        <section id="tab-reports" class="tab-content hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Gestor Monedas Externas (1 Col) -->
+                <div class="bg-industrial-card border border-industrial-border rounded-xl p-5 space-y-4">
+                    <div class="border-b border-industrial-border pb-3">
+                        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-globe text-gold-400"></i> Gestor Cambiario / Divisas
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Tasas de conversión para ventas e importaciones</p>
+                    </div>
+
+                    <div class="space-y-3 text-xs font-mono">
+                        <div class="bg-industrial-900 p-3 rounded-lg border border-industrial-border space-y-1">
+                            <label class="text-slate-400 block font-semibold font-sans">Tasa USD / EUR (€)</label>
+                            <input type="number" step="0.01" id="rate-EUR" value="0.92" onchange="updateExchangeRates()" class="w-full bg-industrial-950 border border-industrial-border rounded px-2 py-1 text-slate-200 font-bold">
+                        </div>
+                        <div class="bg-industrial-900 p-3 rounded-lg border border-industrial-border space-y-1">
+                            <label class="text-slate-400 block font-semibold font-sans">Tasa USD / MXN ($)</label>
+                            <input type="number" step="0.1" id="rate-MXN" value="17.50" onchange="updateExchangeRates()" class="w-full bg-industrial-950 border border-industrial-border rounded px-2 py-1 text-slate-200 font-bold">
+                        </div>
+                        <div class="bg-industrial-900 p-3 rounded-lg border border-industrial-border space-y-1">
+                            <label class="text-slate-400 block font-semibold font-sans">Tasa USD / COP ($)</label>
+                            <input type="number" step="10" id="rate-COP" value="3950.00" onchange="updateExchangeRates()" class="w-full bg-industrial-950 border border-industrial-border rounded px-2 py-1 text-slate-200 font-bold">
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-gold-500/10 border border-gold-500/30 rounded-lg text-xs text-gold-300 leading-relaxed">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Toda la estructura de costos se calcula en dólares (USD) y se convierte dinámicamente según la divisa seleccionada.
+                    </div>
+                </div>
+
+                <!-- Reporte Técnico Imprimible (2 Cols) -->
+                <div class="lg:col-span-2 bg-industrial-card border border-industrial-border rounded-xl p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-industrial-border pb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-file-invoice text-gold-400"></i> Reporte Técnico de Absorción de Planta
+                            </h2>
+                            <p class="text-xs text-slate-400">Resumen para gerencia general y auditoría técnica</p>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="window.print()" class="bg-industrial-800 hover:bg-industrial-700 border border-industrial-border text-xs px-3 py-1.5 rounded-lg transition text-slate-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-print"></i> Imprimir
+                            </button>
+                            <button onclick="exportCSV()" class="bg-gold-500 hover:bg-gold-400 text-industrial-950 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                                <i class="fa-solid fa-file-csv"></i> Exportar CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Vista Reporte Imprimible -->
+                    <div class="space-y-4 text-xs font-mono text-slate-300" id="report-print-area">
+                        <div class="bg-industrial-900 p-4 rounded-xl border border-industrial-border space-y-2">
+                            <div class="text-sm font-bold text-white uppercase border-b border-industrial-border/50 pb-1 flex justify-between">
+                                <span>PLANTA INDUSTRIAL PAN RALPH HOLSUM</span>
+                                <span class="text-gold-400" id="report-net-weight-header">539.85g / u</span>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-400 font-sans">
+                                <div>Rebanadora: <strong>2,400 u/h</strong></div>
+                                <div>Turnos: <strong>3 x 8 hrs</strong></div>
+                                <div>Días/Mes: <strong>26 días</strong></div>
+                                <div>OEE Global: <strong class="text-emerald-400" id="report-oee">82%</strong></div>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-industrial-border text-slate-400 text-[11px] font-sans">
+                                        <th class="py-2">Categoría de Costo</th>
+                                        <th class="py-2 text-right">Monto Mensual</th>
+                                        <th class="py-2 text-right">Costo / Unidad</th>
+                                        <th class="py-2 text-right">% Participación</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-industrial-border/40 text-[11px]" id="report-table-body">
+                                    <!-- Filas Dinámicas -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MODAL: CREAR / EDITAR VARIABLE -->
+    <div id="var-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-industrial-card border border-gold-500/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl glow-gold">
+            <div class="flex justify-between items-center border-b border-industrial-border pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2" id="modal-title">
+                    <i class="fa-solid fa-pen-to-square text-gold-400"></i> Variable
+                </h3>
+                <button onclick="closeVarModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="var-form" onsubmit="handleVarFormSubmit(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="modal-var-id">
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Nombre de la Variable</label>
+                    <input type="text" id="modal-var-name" required class="w-full bg-industrial-900 border border-industrial-border rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-gold-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Valor Numérico</label>
+                        <input type="number" step="any" id="modal-var-val" required class="w-full bg-industrial-900 border border-industrial-border rounded-lg px-3 py-2 text-slate-100 font-mono font-bold focus:outline-none focus:border-gold-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Unidad de Medida</label>
+                        <input type="text" id="modal-var-unit" required placeholder="$/kg, %, g, min..." class="w-full bg-industrial-900 border border-industrial-border rounded-lg px-3 py-2 text-slate-100 font-mono focus:outline-none focus:border-gold-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Categoría Técnica</label>
+                    <select id="modal-var-cat" class="w-full bg-industrial-900 border border-industrial-border rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-gold-500">
+                        <option value="MP">1. Materias Primas Directas</option>
+                        <option value="PROC">2. Ratios Técnicos y Pesos Proceso</option>
+                        <option value="EMP">3. Empaque e Insumos Planta</option>
+                        <option value="OPER">4. Tiempos y Operaciones</option>
+                        <option value="ENE">5. Energéticos y Servicios</option>
+                        <option value="LAB">6. Control Calidad / Lab</option>
+                        <option value="MO">7. Mano de Obra y Prestaciones</option>
+                        <option value="CAPEX">8. Inversión Inicial (CAPEX)</option>
+                        <option value="FIXED">9. Costos Fijos & Depreciación</option>
+                        <option value="COM">10. Comercial, Logística & Impuestos</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Descripción / Observación Técnico-Financiera</label>
+                    <textarea id="modal-var-desc" rows="2" class="w-full bg-industrial-900 border border-industrial-border rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-gold-500"></textarea>
+                </div>
+
+                <div class="pt-3 flex justify-end space-x-2 border-t border-industrial-border">
+                    <button type="button" onclick="closeVarModal()" class="px-4 py-2 bg-industrial-900 hover:bg-industrial-800 border border-industrial-border text-slate-300 rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-gold-500 hover:bg-gold-400 text-industrial-950 font-bold rounded-lg shadow">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-industrial-900 border-t border-industrial-border py-4 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div>PAN RALPH HOLSUM &copy; 2026 • Sistema de Costos, Pesos & Precios (94 Variables Interactivas)</div>
+            <div class="flex space-x-4 text-slate-400 font-mono">
+                <span>Peso Net: <strong class="text-amber-400" id="footer-weight">539.85g</strong></span>
+                <span>Margen: <strong class="text-gold-400" id="footer-margin">25.0%</strong></span>
+                <span>CAPEX: <strong class="text-gold-400">$385k</strong></span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- LÓGICA Y MOTOR DE CÁLCULO DE LA APLICACIÓN -->
+    <script>
+        // ====================================================================================
+        // BASE DE DATOS ORIGINAL CON LAS 94 VARIABLES DEL ESTUDIO TÉCNICO INDUSTRIAL
+        // ====================================================================================
+        const defaultVariables = [
+            // Categoría: Materias Primas e Ingredientes Directos (Vars 1-10, 91)
+            { id: 1, name: "Harina de trigo industrial alta fuerza", val: 0.65, unit: "$/kg", cat: "MP", desc: "Costo por kg de harina de trigo de gran fuerza" },
+            { id: 2, name: "Agua potable tratada formulación", val: 0.005, unit: "$/L", cat: "MP", desc: "Costo por litro de agua de proceso filtrada" },
+            { id: 3, name: "Levadura fresca prensada / instantánea", val: 3.20, unit: "$/kg", cat: "MP", desc: "Costo por kg de levadura industrial" },
+            { id: 4, name: "Azúcar refinada (sacarosa)", val: 0.85, unit: "$/kg", cat: "MP", desc: "Costo por kg de azúcar" },
+            { id: 5, name: "Manteca vegetal hidrogenada / grasa", val: 1.40, unit: "$/kg", cat: "MP", desc: "Costo por kg de manteca industrial" },
+            { id: 6, name: "Sal refinada yodada gluten", val: 0.25, unit: "$/kg", cat: "MP", desc: "Costo por kg de sal refinada" },
+            { id: 7, name: "Leche entera en polvo / sustituto lácteo", val: 4.10, unit: "$/kg", cat: "MP", desc: "Costo por kg de suero/leche en polvo" },
+            { id: 8, name: "Emulsionantes / acondicionadores (DATEM, SSL)", val: 5.50, unit: "$/kg", cat: "MP", desc: "Costo por kg de mejorador de masa" },
+            { id: 9, name: "Conservantes químicos (Propionato Calcio)", val: 2.80, unit: "$/kg", cat: "MP", desc: "Costo por kg de inhibidor de hongos" },
+            { id: 10, name: "Enzimas alfa-amilasas frescura", val: 12.50, unit: "$/kg", cat: "MP", desc: "Costo por kg de enzimas de vida útil" },
+            { id: 91, name: "Holgura por volatilidad de insumos", val: 7.5, unit: "%", cat: "MP", desc: "Margen de amortiguación por volatilidad" },
+
+            // Categoría: Ratios Técnicos y Pesos Proceso (Vars 11-15)
+            { id: 11, name: "Merma física almacenamiento seco MP", val: 1.5, unit: "%", cat: "PROC", desc: "% pérdida por manejo en granel/bodega" },
+            { id: 12, name: "Factor hidratación técnica harina", val: 62.0, unit: "%", cat: "PROC", desc: "% de absorción de agua sobre la harina" },
+            { id: 13, name: "Peso estándar pieza masa cruda en molde", val: 610, unit: "g", cat: "PROC", desc: "Gramos de masa por molde antes de hornear" },
+            { id: 14, name: "Pérdida evaporación horneo/enfriado", val: 11.5, unit: "%", cat: "PROC", desc: "% evaporación de humedad en horno y cooler" },
+            { id: 15, name: "Rendimiento piezas por bulto 50kg", val: 116, unit: "piezas", cat: "PROC", desc: "Panes obtenidos por saco de 50kg harina" },
+
+            // Categoría: Empaque e Insumos Planta (Vars 16-25)
+            { id: 16, name: "Bolsa polietileno impresa a color", val: 0.045, unit: "$/u", cat: "EMP", desc: "Costo por unidad de bolsa Holsum" },
+            { id: 17, name: "Cinta amarre / broche (Kwik Lok)", val: 0.003, unit: "$/u", cat: "EMP", desc: "Costo broche plástico de cierre" },
+            { id: 18, name: "Caja cartón corrugado máster", val: 1.20, unit: "$/u", cat: "EMP", desc: "Costo de caja de embarque" },
+            { id: 19, name: "Película extensible (stretch film)", val: 14.00, unit: "$/rollo", cat: "EMP", desc: "Costo de film de paletizado" },
+            { id: 20, name: "Aceite mineral desmoldante", val: 2.40, unit: "$/L", cat: "EMP", desc: "Costo de desmoldante para moldes" },
+            { id: 21, name: "Sanitizantes químicos bandas/rebanadora", val: 1.80, unit: "$/L", cat: "EMP", desc: "Costo de desinfectante de cuchillas" },
+            { id: 22, name: "Alcohol grado alimenticio aspersión", val: 1.95, unit: "$/L", cat: "EMP", desc: "Costo de alcohol aspersión embolsado" },
+            { id: 23, name: "Etiquetas trazabilidad / código barras", val: 0.005, unit: "$/u", cat: "EMP", desc: "Costo por etiqueta térmica" },
+            { id: 24, name: "Desperdicio bolsas en máquina selladora", val: 2.0, unit: "%", cat: "EMP", desc: "% rotura o atasco en empacadora" },
+            { id: 25, name: "Capacidad unidades pan por caja máster", val: 12, unit: "u/caja", cat: "EMP", desc: "Panes empacados por caja" },
+
+            // Categoría: Tiempos y Operaciones (Vars 26-37)
+            { id: 26, name: "Tiempo ciclo mezclado/amasado", val: 12, unit: "min", cat: "OPER", desc: "Duración de amasado por batch" },
+            { id: 27, name: "Tiempo reposo masa en tolva", val: 15, unit: "min", cat: "OPER", desc: "Descanso pre-divisora" },
+            { id: 28, name: "Velocidad divisora/boleadora", val: 45, unit: "p/min", cat: "OPER", desc: "Piezas por minuto de boleo" },
+            { id: 29, name: "Tiempo cámara fermentación", val: 55, unit: "min", cat: "OPER", desc: "Permanencia en proofer" },
+            { id: 30, name: "Tiempo horneo continuo túnel", val: 22, unit: "min", cat: "OPER", desc: "Permanencia en horno túnel" },
+            { id: 31, name: "Tiempo enfriamiento pre-rebanado", val: 90, unit: "min", cat: "OPER", desc: "Enfriamiento en espiral" },
+            { id: 32, name: "Velocidad rebanadora/embolsadora", val: 2400, unit: "panes/h", cat: "OPER", desc: "Capacidad nominal de la línea" },
+            { id: 33, name: "Turnos producción por jornada", val: 3, unit: "turnos/día", cat: "OPER", desc: "Turnos operativos diarios" },
+            { id: 34, name: "Duración neta por turno laboral", val: 8, unit: "h/turno", cat: "OPER", desc: "Horas efectivas por turno" },
+            { id: 35, name: "Días operativos planta / mes", val: 26, unit: "días/mes", cat: "OPER", desc: "Días trabajados al mes" },
+            { id: 36, name: "Eficiencia General Equipos (OEE)", val: 82.0, unit: "%", cat: "OPER", desc: "Rendimiento global OEE" },
+            { id: 37, name: "Porcentaje pan rechazado/defectos", val: 1.8, unit: "%", cat: "OPER", desc: "% descarte en calidad" },
+
+            // Categoría: Energéticos y Servicios (Vars 38-48)
+            { id: 38, name: "Costo Gas Licuado Petróleo (GLP)", val: 0.38, unit: "$/L", cat: "ENE", desc: "Precio por litro de GLP" },
+            { id: 39, name: "Consumo promedio gas horno túnel", val: 65, unit: "L/h", cat: "ENE", desc: "Litros de gas por hora de horneo" },
+            { id: 40, name: "Costo energía eléctrica industrial", val: 0.11, unit: "$/kWh", cat: "ENE", desc: "Precio por kWh consumido" },
+            { id: 41, name: "Consumo eléctrico motores planta", val: 85, unit: "kWh/h", cat: "ENE", desc: "Consumo eléctrico de la línea" },
+            { id: 42, name: "Consumo diésel planta emergencia", val: 18, unit: "L/h", cat: "ENE", desc: "Consumo de grupo electrógeno" },
+            { id: 43, name: "Costo diésel generación respaldo", val: 0.95, unit: "$/L", cat: "ENE", desc: "Precio por litro de diésel" },
+            { id: 44, name: "Costo agua servicios generales", val: 1.50, unit: "$/m³", cat: "ENE", desc: "Precio por metro cúbico de agua" },
+            { id: 45, name: "Consumo gas generador vapor cámara", val: 1200, unit: "L/mes", cat: "ENE", desc: "Gas mensual para humedad" },
+            { id: 46, name: "Gasto lubricantes especializados", val: 350, unit: "$/mes", cat: "ENE", desc: "Aceite/grasa sintética grado H1" },
+            { id: 47, name: "Recarga gases refrigerantes agua", val: 1400, unit: "$/año", cat: "ENE", desc: "Mantenimiento chiller" },
+            { id: 48, name: "Eficiencia térmica quemador horno", val: 88.0, unit: "%", cat: "ENE", desc: "% eficiencia quemadores" },
+
+            // Categoría: Control Calidad / Lab (Var 92)
+            { id: 92, name: "Reactivos y análisis lab por bach", val: 8.50, unit: "$/bach", cat: "LAB", desc: "Pruebas de microbiología y gluten" },
+
+            // Categoría: Mano de Obra y Prestaciones (Vars 49-63)
+            { id: 49, name: "Salario base Operador Amasado", val: 1100, unit: "$/mes", cat: "MO", desc: "Sueldo operador mezclas" },
+            { id: 50, name: "Salario base Operador Divisora", val: 1050, unit: "$/mes", cat: "MO", desc: "Sueldo operador formado" },
+            { id: 51, name: "Salario base Operador Horno", val: 1150, unit: "$/mes", cat: "MO", desc: "Sueldo operador horneo" },
+            { id: 52, name: "Salario base Operador Empaque", val: 1000, unit: "$/mes", cat: "MO", desc: "Sueldo operador rebanadora" },
+            { id: 53, name: "Salario base Supervisor Calidad", val: 1600, unit: "$/mes", cat: "MO", desc: "Sueldo supervisor de turno" },
+            { id: 54, name: "Salario base Jefe de Turno", val: 2100, unit: "$/mes", cat: "MO", desc: "Sueldo jefe de producción" },
+            { id: 55, name: "Salario base Auxiliares Limpieza", val: 750, unit: "$/mes", cat: "MO", desc: "Sueldo aseo BPM" },
+            { id: 56, name: "Salario base Almacén y Despacho", val: 850, unit: "$/mes", cat: "MO", desc: "Sueldo logística interna" },
+            { id: 57, name: "Carga prestacional y seguridad social", val: 35.0, unit: "%", cat: "MO", desc: "% sobrecosto de ley" },
+            { id: 58, name: "Dotación, uniformes y EPI anual/emp", val: 180, unit: "$/año", cat: "MO", desc: "Equipos e indumentaria" },
+            { id: 59, name: "Exámenes médicos y sanitarios", val: 450, unit: "$/mes", cat: "MO", desc: "Certificados manipuladores" },
+            { id: 60, name: "Recargo horas extras y nocturnas", val: 1200, unit: "$/mes", cat: "MO", desc: "Bolsa recargos operativos" },
+            { id: 61, name: "Subsidio alimentación / transporte", val: 2300, unit: "$/mes", cat: "MO", desc: "Beneficio colectivo personal" },
+            { id: 62, name: "Provisiones legales anuales prorrateadas", val: 3100, unit: "$/mes", cat: "MO", desc: "Fondo prestaciones/cesantías" },
+            { id: 63, name: "Capacitación BPM mensual", val: 250, unit: "$/mes", cat: "MO", desc: "Formación sanitaria continua" },
+
+            // Categoría: Inversión Inicial CAPEX (Var 94)
+            { id: 94, name: "CAPEX Inicial Maquinaria y Planta", val: 385000.00, unit: "$", cat: "CAPEX", desc: "Inversión inicial en activo fijo" },
+
+            // Categoría: Costos Fijos & Depreciación (Vars 64-75)
+            { id: 64, name: "Canon arrendamiento nave industrial", val: 5500, unit: "$/mes", cat: "FIXED", desc: "Alquiler de galpón industrial" },
+            { id: 65, name: "Depreciación Horno Túnel Industrial", val: 1800, unit: "$/mes", cat: "FIXED", desc: "Depreciación línea horneo" },
+            { id: 66, name: "Depreciación Amasadoras Alta Velocidad", val: 650, unit: "$/mes", cat: "FIXED", desc: "Depreciación mezcladoras" },
+            { id: 67, name: "Depreciación Cámara Fermentación/Silos", val: 900, unit: "$/mes", cat: "FIXED", desc: "Depreciación fermentadores" },
+            { id: 68, name: "Depreciación Rebanadoras/Embolsadoras", val: 1100, unit: "$/mes", cat: "FIXED", desc: "Depreciación empaque" },
+            { id: 69, name: "Contrato mantenimiento preventivo", val: 2400, unit: "$/mes", cat: "FIXED", desc: "Servicio técnico contratado" },
+            { id: 70, name: "Seguro planta contra incendios/RC", val: 1150, unit: "$/mes", cat: "FIXED", desc: "Póliza multirriesgo" },
+            { id: 71, name: "Servicios admin (Internet, ERP)", val: 680, unit: "$/mes", cat: "FIXED", desc: "Telecomunicaciones y licencias" },
+            { id: 72, name: "Control integrado de plagas", val: 380, unit: "$/mes", cat: "FIXED", desc: "Certificación plagas sanitarias" },
+            { id: 73, name: "Honorarios contables y legales", val: 1500, unit: "$/mes", cat: "FIXED", desc: "Asesoría corporativa" },
+            { id: 74, name: "Papelería e insumos admin", val: 220, unit: "$/mes", cat: "FIXED", desc: "Material de oficina" },
+            { id: 75, name: "Amortización preoperativos y licencias", val: 400, unit: "$/mes", cat: "FIXED", desc: "Amortización permisos" },
+
+            // Categoría: Comercial, Logística & Impuestos (Vars 76-90, 93)
+            { id: 76, name: "Flete distribución primaria / unidad", val: 0.12, unit: "$/u", cat: "COM", desc: "Flete por paquete de pan" },
+            { id: 77, name: "Comisión fuerza de ventas / distribuidores", val: 5.0, unit: "%", cat: "COM", desc: "% comisión ventas" },
+            { id: 78, name: "Devoluciones comerciales vencimiento", val: 4.0, unit: "%", cat: "COM", desc: "% cambio por vencimiento" },
+            { id: 79, name: "Presupuesto marketing y POP", val: 3500, unit: "$/mes", cat: "COM", desc: "Promoción en supermercados" },
+            { id: 80, name: "Mantenimiento correctivo imprevisto", val: 1200, unit: "$/mes", cat: "COM", desc: "Fondo imprevistos mecánicos" },
+            { id: 81, name: "Combustible flota de reparto propia", val: 4200, unit: "$/mes", cat: "COM", desc: "Combustible camiones" },
+            { id: 82, name: "Peajes y gastos de ruta", val: 850, unit: "$/mes", cat: "COM", desc: "Gastos de logística terrestre" },
+            { id: 83, name: "Costo financiero pasarelas / tarjetas", val: 2.5, unit: "%", cat: "COM", desc: "Comisión cobro electrónico" },
+            { id: 84, name: "Merma en carga/descarga y estiba", val: 0.8, unit: "%", cat: "COM", desc: "% rotura transporte" },
+            { id: 85, name: "Descuento comercial supermercados", val: 12.0, unit: "%", cat: "COM", desc: "% descuento grandes cadenas" },
+            { id: 86, name: "Impuesto sobre la Renta (ISLR)", val: 30.0, unit: "%", cat: "COM", desc: "Tasa de impuesto ganancias" },
+            { id: 87, name: "Impuesto al Valor Agregado (IVA)", val: 0.0, unit: "%", cat: "COM", desc: "Exento en pan blanco básico" },
+            { id: 88, name: "Impuestos municipales y patentes", val: 750, unit: "$/mes", cat: "COM", desc: "Patente de industria local" },
+            { id: 89, name: "Tasa interés bancaria créditos anual", val: 9.5, unit: "%", cat: "COM", desc: "Costo financiero de deuda" },
+            { id: 90, name: "Margen Utilidad Neta Objetivo", val: 25.0, unit: "%", cat: "COM", desc: "Margen neto de beneficio" },
+            { id: 93, name: "Días Ciclo Conversión Efectivo (Working Cap)", val: 45, unit: "días", cat: "COM", desc: "Días de caja requeridos" }
+        ];
+
+        // ESTADO ACTIVO DEL MODELO
+        let variablesState = JSON.parse(JSON.stringify(defaultVariables));
+        let activeCurrency = "USD";
+        let exchangeRates = { USD: 1.0, EUR: 0.92, MXN: 17.50, COP: 3950.00 };
+        let currencySymbols = { USD: "$", EUR: "€", MXN: "$", COP: "$" };
+        let costChartInstance = null;
+
+        // Búsqueda de valores de variables de forma segura
+        function getVarVal(id) {
+            const found = variablesState.find(v => v.id === id);
+            return found ? parseFloat(found.val) || 0 : 0;
+        }
+
+        function setVarVal(id, newVal) {
+            const found = variablesState.find(v => v.id === id);
+            if (found) {
+                found.val = parseFloat(newVal) || 0;
+            }
+        }
+
+        // Formateador de Monedas
+        function formatMoney(amountInUSD) {
+            const rate = exchangeRates[activeCurrency] || 1.0;
+            const symbol = currencySymbols[activeCurrency] || "$";
+            const converted = amountInUSD * rate;
+            
+            if (activeCurrency === "COP") {
+                return `${symbol}${converted.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`;
+            }
+            return `${symbol}${converted.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        // ====================================================================================
+        // MOTOR DE CÁLCULO TÉCNICO Y FINANCIERO (INCLUYE PESOS Y PRECIOS)
+        // ====================================================================================
+        function calculateModel(overrideVars = null) {
+            const fetchVal = (id) => {
+                if (overrideVars) {
+                    const found = overrideVars.find(v => v.id === id);
+                    if (found) return parseFloat(found.val) || 0;
+                }
+                return getVarVal(id);
+            };
+
+            // 1. CÁLCULO DE PESO EN GRAMOS
+            const rawWeightGrams = fetchVal(13); // Variable 13: Masa cruda en molde (ej: 610g)
+            const bakingLossPct = fetchVal(14) / 100; // Variable 14: % merma por evaporación (ej: 11.5%)
+            const netBakedWeightGrams = rawWeightGrams * (1 - bakingLossPct); // ej: 610 * (1 - 0.115) = 539.85g
+
+            // 2. PARÁMETROS OPERATIVOS
+            const capacityPerHour = fetchVal(32); // 2,400 panes/h
+            const shifts = fetchVal(33);          // 3 turnos
+            const hoursPerShift = fetchVal(34);   // 8 hrs
+            const daysPerMonth = fetchVal(35);    // 26 días
+            const oeePct = fetchVal(36) / 100;     // 82%
+            const rejectPct = fetchVal(37) / 100;  // 1.8%
+
+            const monthlyHours = shifts * hoursPerShift * daysPerMonth; // 624 horas
+            const grossMonthlyUnits = capacityPerHour * monthlyHours * oeePct; // ~1,228,032 u
+            const netMonthlyUnits = grossMonthlyUnits * (1 - rejectPct);      // ~1,205,927 u netas
+
+            // 3. MATERIAS PRIMAS POR UNIDAD (Formulación proporcional según saco 50kg)
+            const flourKg = 0.35 * fetchVal(1);
+            const yeastKg = 0.008 * fetchVal(3);
+            const sugarKg = 0.025 * fetchVal(4);
+            const fatKg = 0.02 * fetchVal(5);
+            const saltKg = 0.005 * fetchVal(6);
+            const milkKg = 0.005 * fetchVal(7);
+            const emulsifiersKg = 0.002 * fetchVal(8);
+            const preservativesKg = 0.001 * fetchVal(9);
+            const enzymesKg = 0.0002 * fetchVal(10);
+            const waterL = 0.22 * fetchVal(2);
+
+            const rawMaterialBase = flourKg + yeastKg + sugarKg + fatKg + saltKg + milkKg + emulsifiersKg + preservativesKg + enzymesKg + waterL;
+            const volatilityBuffer = 1 + (fetchVal(91) / 100); // 7.5%
+            const storageLoss = 1 + (fetchVal(11) / 100);      // 1.5%
+            const rawMaterialCostUnit = rawMaterialBase * volatilityBuffer * storageLoss;
+
+            // 4. MATERIALES DE EMPAQUE POR UNIDAD
+            const bagUnit = fetchVal(16);          // $0.045
+            const kwikLokUnit = fetchVal(17);      // $0.003
+            const masterBoxDiv = fetchVal(25) > 0 ? fetchVal(18) / fetchVal(25) : 0.10;
+            const labelUnit = masterBoxDiv + fetchVal(23); // Cartón + Etiqueta
+            const packagingWaste = 1 + (fetchVal(24) / 100); // 2% desperdicio
+            const packagingCostUnit = (bagUnit + kwikLokUnit + labelUnit) * packagingWaste;
+
+            // 5. MANO DE OBRA DIRECTA E INDIRECTA
+            const baseSalariesSum = fetchVal(49) + fetchVal(50) + fetchVal(51) + fetchVal(52) + 
+                                    fetchVal(53) + fetchVal(54) + fetchVal(55) + fetchVal(56);
+            const benefitsPct = 1 + (fetchVal(57) / 100); // 35% prestaciones
+            const monthlySalariesTotal = baseSalariesSum * benefitsPct;
+
+            const uniformsMonthly = fetchVal(58);
+            const examsMonthly = fetchVal(59);
+            const overtimeMonthly = fetchVal(60);
+            const foodSubsidyMonthly = fetchVal(61);
+            const legalProvisionsMonthly = fetchVal(62);
+            const bpmTrainingMonthly = fetchVal(63);
+
+            const totalMonthlyLaborCost = monthlySalariesTotal + uniformsMonthly + examsMonthly + 
+                                          overtimeMonthly + foodSubsidyMonthly + legalProvisionsMonthly + bpmTrainingMonthly;
+            const laborCostUnit = netMonthlyUnits > 0 ? totalMonthlyLaborCost / netMonthlyUnits : 0;
+
+            // 6. ENERGÉTICOS Y SERVICIOS PÚBLICOS POR UNIDAD
+            const glpCostPerHour = fetchVal(38) * fetchVal(39); // GLP $0.38 * 65L
+            const elecCostPerHour = fetchVal(40) * fetchVal(41); // Elec $0.11 * 85kWh
+            const totalEnergyPerHour = glpCostPerHour + elecCostPerHour;
+            const energyCostUnitPerHour = (capacityPerHour * oeePct) > 0 ? totalEnergyPerHour / (capacityPerHour * oeePct) : 0;
+
+            const monthlyUtilities = (fetchVal(45) * fetchVal(38)) + fetchVal(46) + (fetchVal(47) / 12);
+            const utilitiesUnit = netMonthlyUnits > 0 ? monthlyUtilities / netMonthlyUnits : 0;
+            const totalEnergyCostUnit = energyCostUnitPerHour + utilitiesUnit;
+
+            // 7. CONTROL DE CALIDAD Y LABORATORIO
+            const qualityCostUnit = fetchVal(92) / 1200; // $8.50 / 1200 panes por batch
+
+            // 8. COSTOS FIJOS Y DEPRECIACIÓN
+            const rentMonthly = fetchVal(64);
+            const depOven = fetchVal(65);
+            const depMixers = fetchVal(66);
+            const depChamber = fetchVal(67);
+            const depSlicers = fetchVal(68);
+            const maintContract = fetchVal(69);
+            const insurance = fetchVal(70);
+            const erpServices = fetchVal(71);
+            const pestControl = fetchVal(72);
+            const legalFees = fetchVal(73);
+            const officeSupplies = fetchVal(74);
+            const preOpAmortization = fetchVal(75);
+
+            const totalFixedMonthly = rentMonthly + depOven + depMixers + depChamber + depSlicers + 
+                                      maintContract + insurance + erpServices + pestControl + 
+                                      legalFees + officeSupplies + preOpAmortization;
+            const fixedCostUnit = netMonthlyUnits > 0 ? totalFixedMonthly / netMonthlyUnits : 0;
+
+            // COSTO TOTAL PRODUCCIÓN UNITARIO
+            const unitProductionCost = rawMaterialCostUnit + packagingCostUnit + laborCostUnit + 
+                                       totalEnergyCostUnit + qualityCostUnit + fixedCostUnit;
+
+            const costPerGram = netBakedWeightGrams > 0 ? unitProductionCost / netBakedWeightGrams : 0;
+
+            // 9. CADENA DE PRECIO Y DEDUCCIONES COMERCIALES
+            const commPct = fetchVal(77) / 100;        // 5%
+            const returnsPct = fetchVal(78) / 100;     // 4%
+            const lossPct = fetchVal(84) / 100;        // 0.8%
+            const cardPct = fetchVal(83) / 100;        // 2.5%
+            const supermarketPct = fetchVal(85) / 100; // 12%
+
+            const totalCommercialDeductionPct = commPct + returnsPct + lossPct + cardPct + supermarketPct; // 24.3%
+            const targetProfitMarginPct = fetchVal(90) / 100; // Margen Neto
+            const freightPerUnit = fetchVal(76);              // $0.12
+
+            // FÓRMULA FINAL DE PRECIO DE VENTA
+            const denominator = 1 - totalCommercialDeductionPct - targetProfitMarginPct;
+            let finalSuggestedPrice = 0;
+            if (denominator > 0) {
+                finalSuggestedPrice = (unitProductionCost / denominator) + freightPerUnit;
+            } else {
+                finalSuggestedPrice = unitProductionCost * 2;
+            }
+
+            const wholesalePrice = unitProductionCost / (1 - (commPct + returnsPct + targetProfitMarginPct));
+            const netProfitPerUnit = finalSuggestedPrice * targetProfitMarginPct;
+            const monthlyNetProfit = netProfitPerUnit * netMonthlyUnits;
+            const workingCapital = (unitProductionCost * netMonthlyUnits) * (fetchVal(93) / 30);
+
+            return {
+                rawWeightGrams,
+                bakingLossPct,
+                netBakedWeightGrams,
+                costPerGram,
+                netMonthlyUnits,
+                rawMaterialCostUnit,
+                packagingCostUnit,
+                laborCostUnit,
+                totalEnergyCostUnit,
+                qualityCostUnit,
+                fixedCostUnit,
+                unitProductionCost,
+                totalCommercialDeductionPct,
+                targetProfitMarginPct,
+                freightPerUnit,
+                finalSuggestedPrice,
+                wholesalePrice,
+                netProfitPerUnit,
+                monthlyNetProfit,
+                workingCapital,
+                totalFixedMonthly,
+                totalMonthlyLaborCost
+            };
+        }
+
+        // ====================================================================================
+        // GESTIÓN DE LA INTERFAZ DE USUARIO Y RENDERIZADO
+        // ====================================================================================
+
+        function updateUI() {
+            const res = calculateModel();
+
+            // 1. Tarjetas KPI Principales
+            document.getElementById("kpi-final-price").innerText = formatMoney(res.finalSuggestedPrice);
+            document.getElementById("kpi-net-profit-pct").innerText = `${(res.targetProfitMarginPct * 100).toFixed(1)}%`;
+            document.getElementById("kpi-profit-per-unit").innerText = `+${formatMoney(res.netProfitPerUnit)}/u`;
+
+            // PESOS EN GRAMOS DESTACADOS
+            document.getElementById("kpi-net-weight").innerText = `${res.netBakedWeightGrams.toFixed(2)} g`;
+            document.getElementById("kpi-raw-weight").innerText = `${res.rawWeightGrams.toFixed(0)} g`;
+            document.getElementById("kpi-baking-loss").innerText = `${(res.bakingLossPct * 100).toFixed(1)}%`;
+            document.getElementById("kpi-cost-per-gram").innerText = `${formatMoney(res.costPerGram)}/g`;
+
+            document.getElementById("kpi-unit-cost").innerText = formatMoney(res.unitProductionCost);
+            document.getElementById("kpi-wholesale-price").innerText = formatMoney(res.wholesalePrice);
+            document.getElementById("kpi-variable-deductions").innerText = `-${(res.totalCommercialDeductionPct * 100).toFixed(1)}%`;
+            document.getElementById("kpi-monthly-volume").innerText = `${Math.round(res.netMonthlyUnits).toLocaleString()} u`;
+            
+            document.getElementById("kpi-oee-display").innerText = `${getVarVal(36)}%`;
+            document.getElementById("kpi-reject-display").innerText = `${getVarVal(37)}%`;
+
+            // 2. Desglose Numérico de Costos
+            document.getElementById("cost-raw-material").innerText = formatMoney(res.rawMaterialCostUnit);
+            document.getElementById("cost-packaging").innerText = formatMoney(res.packagingCostUnit);
+            document.getElementById("cost-labor").innerText = formatMoney(res.laborCostUnit);
+            document.getElementById("cost-energy").innerText = formatMoney(res.totalEnergyCostUnit);
+            document.getElementById("cost-quality").innerText = formatMoney(res.qualityCostUnit);
+            document.getElementById("cost-fixed").innerText = formatMoney(res.fixedCostUnit);
+            document.getElementById("cost-total-production").innerText = formatMoney(res.unitProductionCost);
+
+            // 3. Cadena de Precios
+            document.getElementById("pricing-base-cost").innerText = formatMoney(res.unitProductionCost);
+            document.getElementById("v-comm").innerText = `${getVarVal(77).toFixed(1)}%`;
+            document.getElementById("v-returns").innerText = `${getVarVal(78).toFixed(1)}%`;
+            document.getElementById("v-loss").innerText = `${getVarVal(84).toFixed(1)}%`;
+            document.getElementById("v-cards").innerText = `${getVarVal(83).toFixed(1)}%`;
+            document.getElementById("v-supermarket").innerText = `${getVarVal(85).toFixed(1)}%`;
+            document.getElementById("v-total-deductions").innerText = `${(res.totalCommercialDeductionPct * 100).toFixed(1)}%`;
+            document.getElementById("pricing-target-profit").innerText = `${(res.targetProfitMarginPct * 100).toFixed(1)}%`;
+            document.getElementById("pricing-freight").innerText = formatMoney(res.freightPerUnit);
+            document.getElementById("pricing-final-display").innerText = formatMoney(res.finalSuggestedPrice);
+
+            // 4. Indicadores CAPEX & Capital
+            document.getElementById("capex-display").innerText = formatMoney(getVarVal(94));
+            document.getElementById("working-capital-display").innerText = formatMoney(res.workingCapital);
+            document.getElementById("monthly-profit-display").innerText = formatMoney(res.monthlyNetProfit);
+
+            // 5. Sincronización de Sliders
+            const marginPct = (res.targetProfitMarginPct * 100).toFixed(1);
+            document.getElementById("quick-margin-input").value = marginPct;
+            document.getElementById("profit-slider").value = marginPct;
+            document.getElementById("slider-margin-val").innerText = `${marginPct}%`;
+            document.getElementById("slider-result-price").innerText = formatMoney(res.finalSuggestedPrice);
+            document.getElementById("slider-profit-dollar").innerText = `Ganancia: +${formatMoney(res.netProfitPerUnit)} / pan`;
+            
+            // Footer & Report Header Updates
+            document.getElementById("footer-weight").innerText = `${res.netBakedWeightGrams.toFixed(2)}g`;
+            document.getElementById("footer-margin").innerText = `${marginPct}%`;
+            document.getElementById("report-net-weight-header").innerText = `Peso Neto: ${res.netBakedWeightGrams.toFixed(2)}g / pan`;
+            document.getElementById("report-oee").innerText = `${getVarVal(36)}%`;
+
+            // Actualizar Gráfico & Reportes
+            renderChart(res);
+            renderReport(res);
+            runSimulation();
+        }
+
+        // Renderizado del Gráfico Donut de Costos
+        function renderChart(res) {
+            const ctx = document.getElementById('costStructureChart').getContext('2d');
+            
+            const dataValues = [
+                res.rawMaterialCostUnit,
+                res.packagingCostUnit,
+                res.laborCostUnit,
+                res.totalEnergyCostUnit,
+                res.qualityCostUnit,
+                res.fixedCostUnit
+            ];
+
+            if (costChartInstance) {
+                costChartInstance.data.datasets[0].data = dataValues;
+                costChartInstance.update();
+            } else {
+                costChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Mat. Primas', 'Empaque', 'Mano de Obra', 'Energía', 'Calidad', 'Costos Fijos'],
+                        datasets: [{
+                            data: dataValues,
+                            backgroundColor: [
+                                '#f59e0b', // Amber
+                                '#3b82f6', // Blue
+                                '#6366f1', // Indigo
+                                '#06b6d4', // Cyan
+                                '#a855f7', // Purple
+                                '#f43f5e'  // Rose
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#161f30'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${formatMoney(context.raw)}`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '72%'
+                    }
+                });
+            }
+        }
+
+        // Renderizado de la lista interactiva de Variables (CRUD 360)
+        function renderVariablesGrid() {
+            const container = document.getElementById("variables-container");
+            container.innerHTML = "";
+
+            const catFilter = document.getElementById("var-category-filter").value;
+            const searchQuery = document.getElementById("var-search-input").value.toLowerCase().trim();
+
+            let visibleCount = 0;
+
+            variablesState.forEach(v => {
+                const matchesCat = (catFilter === "ALL" || v.cat === catFilter);
+                const matchesSearch = v.name.toLowerCase().includes(searchQuery) || 
+                                      v.id.toString().includes(searchQuery) || 
+                                      v.desc.toLowerCase().includes(searchQuery);
+
+                if (matchesCat && matchesSearch) {
+                    visibleCount++;
+                    const card = document.createElement("div");
+                    const isWeightVar = (v.id === 13 || v.id === 14);
+                    
+                    card.className = `bg-industrial-card border ${isWeightVar ? 'border-amber-500 glow-gold' : 'border-industrial-border'} rounded-xl p-4 space-y-3 hover:border-gold-500/60 transition flex flex-col justify-between`;
+
+                    card.innerHTML = `
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] font-mono font-bold bg-industrial-900 text-gold-400 px-2 py-0.5 rounded border border-industrial-border">
+                                    N° ${v.id}
+                                </span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[10px] text-slate-400 font-semibold uppercase">${v.cat}</span>
+                                    <button onclick="openEditVarModal(${v.id})" title="Editar Variable" class="text-slate-400 hover:text-gold-400 text-xs px-1">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button onclick="deleteVariable(${v.id})" title="Eliminar Variable" class="text-slate-500 hover:text-rose-400 text-xs px-1">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <h3 class="text-xs font-bold text-slate-100 leading-snug line-clamp-2">${v.name} ${isWeightVar ? '<i class="fa-solid fa-weight-scale text-amber-400 ml-1"></i>' : ''}</h3>
+                            <p class="text-[11px] text-slate-400 leading-tight">${v.desc}</p>
+                        </div>
+
+                        <div class="pt-2 flex items-center justify-between border-t border-industrial-border/60">
+                            <span class="text-xs text-slate-400 font-mono font-semibold">${v.unit}</span>
+                            <div class="flex items-center space-x-1">
+                                <input type="number" step="any" value="${v.val}" onchange="updateVariableValue(${v.id}, this.value)" class="w-24 bg-industrial-950 border border-industrial-border rounded px-2 py-1 text-right text-xs font-bold font-mono text-gold-400 focus:outline-none focus:border-gold-500">
+                            </div>
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+                }
+            });
+
+            document.getElementById("var-count-badge").innerText = `${visibleCount}`;
+            document.getElementById("tab-var-count").innerText = `${variablesState.length}`;
+        }
+
+        // MODAL DE GESTIÓN (CREAR / EDITAR)
+        function openCreateVarModal() {
+            document.getElementById("modal-title").innerHTML = `<i class="fa-solid fa-plus-circle text-emerald-400"></i> Nueva Variable`;
+            document.getElementById("modal-var-id").value = "";
+            document.getElementById("modal-var-name").value = "";
+            document.getElementById("modal-var-val").value = "";
+            document.getElementById("modal-var-unit").value = "";
+            document.getElementById("modal-var-cat").value = "MP";
+            document.getElementById("modal-var-desc").value = "";
+            document.getElementById("var-modal").classList.remove("hidden");
+        }
+
+        function openEditVarModal(id) {
+            const v = variablesState.find(item => item.id === id);
+            if (!v) return;
+
+            document.getElementById("modal-title").innerHTML = `<i class="fa-solid fa-pen-to-square text-gold-400"></i> Editar Variable N° ${v.id}`;
+            document.getElementById("modal-var-id").value = v.id;
+            document.getElementById("modal-var-name").value = v.name;
+            document.getElementById("modal-var-val").value = v.val;
+            document.getElementById("modal-var-unit").value = v.unit;
+            document.getElementById("modal-var-cat").value = v.cat;
+            document.getElementById("modal-var-desc").value = v.desc;
+            document.getElementById("var-modal").classList.remove("hidden");
+        }
+
+        function closeVarModal() {
+            document.getElementById("var-modal").classList.add("hidden");
+        }
+
+        function handleVarFormSubmit(e) {
+            e.preventDefault();
+            const idInput = document.getElementById("modal-var-id").value;
+            const name = document.getElementById("modal-var-name").value;
+            const val = parseFloat(document.getElementById("modal-var-val").value) || 0;
+            const unit = document.getElementById("modal-var-unit").value;
+            const cat = document.getElementById("modal-var-cat").value;
+            const desc = document.getElementById("modal-var-desc").value;
+
+            if (idInput) {
+                // Modificación existente
+                const id = parseInt(idInput);
+                const v = variablesState.find(item => item.id === id);
+                if (v) {
+                    v.name = name;
+                    v.val = val;
+                    v.unit = unit;
+                    v.cat = cat;
+                    v.desc = desc;
+                }
+            } else {
+                // Alta de Nueva Variable
+                const newId = variablesState.length > 0 ? Math.max(...variablesState.map(v => v.id)) + 1 : 1;
+                variablesState.push({ id: newId, name, val, unit, cat, desc });
+            }
+
+            closeVarModal();
+            renderVariablesGrid();
+            updateUI();
+        }
+
+        function deleteVariable(id) {
+            if (confirm(`¿Está seguro de eliminar la variable N° ${id} del modelo de costos?`)) {
+                variablesState = variablesState.filter(v => v.id !== id);
+                renderVariablesGrid();
+                updateUI();
+            }
+        }
+
+        function updateVariableValue(id, val) {
+            setVarVal(id, val);
+            updateUI();
+        }
+
+        function filterVariables() {
+            renderVariablesGrid();
+        }
+
+        // Control del Margen de Utilidad
+        function quickUpdateMargin(val) {
+            setVarVal(90, val);
+            updateUI();
+        }
+
+        function setProfitMargin(val) {
+            setVarVal(90, val);
+            updateUI();
+        }
+
+        function onProfitSliderChange(val) {
+            setVarVal(90, val);
+            updateUI();
+        }
+
+        // Restablecimiento Total de Fábrica
+        function resetDefaults() {
+            if (confirm("¿Desea restablecer las 94 variables a los valores técnicos originales del proyecto?")) {
+                variablesState = JSON.parse(JSON.stringify(defaultVariables));
+                renderVariablesGrid();
+                updateUI();
+            }
+        }
+
+        // Gestión Cambiaria
+        function updateCurrency() {
+            activeCurrency = document.getElementById("currency-select").value;
+            updateUI();
+        }
+
+        function updateExchangeRates() {
+            exchangeRates.EUR = parseFloat(document.getElementById("rate-EUR").value) || 0.92;
+            exchangeRates.MXN = parseFloat(document.getElementById("rate-MXN").value) || 17.50;
+            exchangeRates.COP = parseFloat(document.getElementById("rate-COP").value) || 3950.00;
+            updateUI();
+        }
+
+        // Simulador de Sensibilidad Escenarios
+        function runSimulation() {
+            const simOEE = parseFloat(document.getElementById("sim-oee").value);
+            const simVolatility = parseFloat(document.getElementById("sim-volatility").value);
+            const simReject = parseFloat(document.getElementById("sim-reject").value);
+
+            document.getElementById("sim-oee-val").innerText = `${simOEE}%`;
+            document.getElementById("sim-volatility-val").innerText = `${simVolatility}%`;
+            document.getElementById("sim-reject-val").innerText = `${simReject}%`;
+
+            const baseRes = calculateModel();
+
+            // Clonar variables para simulación
+            const simVars = JSON.parse(JSON.stringify(variablesState));
+            const setSim = (id, val) => {
+                const f = simVars.find(v => v.id === id);
+                if (f) f.val = val;
+            };
+
+            setSim(36, simOEE);
+            setSim(91, simVolatility);
+            setSim(37, simReject);
+
+            const simRes = calculateModel(simVars);
+
+            // Poblar Tabla Comparativa
+            document.getElementById("sim-base-vol").innerText = `${Math.round(baseRes.netMonthlyUnits).toLocaleString()} u`;
+            document.getElementById("sim-sim-vol").innerText = `${Math.round(simRes.netMonthlyUnits).toLocaleString()} u`;
+            document.getElementById("sim-diff-vol").innerText = `${(simRes.netMonthlyUnits - baseRes.netMonthlyUnits > 0 ? '+' : '')}${Math.round(simRes.netMonthlyUnits - baseRes.netMonthlyUnits).toLocaleString()} u`;
+
+            document.getElementById("sim-base-cost").innerText = formatMoney(baseRes.unitProductionCost);
+            document.getElementById("sim-sim-cost").innerText = formatMoney(simRes.unitProductionCost);
+            document.getElementById("sim-diff-cost").innerText = formatMoney(simRes.unitProductionCost - baseRes.unitProductionCost);
+
+            document.getElementById("sim-base-price").innerText = formatMoney(baseRes.finalSuggestedPrice);
+            document.getElementById("sim-sim-price").innerText = formatMoney(simRes.finalSuggestedPrice);
+            document.getElementById("sim-diff-price").innerText = formatMoney(simRes.finalSuggestedPrice - baseRes.finalSuggestedPrice);
+
+            document.getElementById("sim-base-profit").innerText = formatMoney(baseRes.monthlyNetProfit);
+            document.getElementById("sim-sim-profit").innerText = formatMoney(simRes.monthlyNetProfit);
+            document.getElementById("sim-diff-profit").innerText = formatMoney(simRes.monthlyNetProfit - baseRes.monthlyNetProfit);
+        }
+
+        // Generar Reporte Técnico de Absorción
+        function renderReport(res) {
+            const body = document.getElementById("report-table-body");
+            body.innerHTML = "";
+
+            const totalCost = res.unitProductionCost;
+
+            const items = [
+                { title: "1. Materias Primas e Insumos Directos (inc. 7.5% volatilidad)", monthly: res.rawMaterialCostUnit * res.netMonthlyUnits, unit: res.rawMaterialCostUnit },
+                { title: "2. Empaque e Insumos de Planta", monthly: res.packagingCostUnit * res.netMonthlyUnits, unit: res.packagingCostUnit },
+                { title: "3. Mano de Obra Directa / Indirecta + Carga Social 35%", monthly: res.totalMonthlyLaborCost, unit: res.laborCostUnit },
+                { title: "4. Energéticos (GLP, Electricidad, Vapor, Agua)", monthly: res.totalEnergyCostUnit * res.netMonthlyUnits, unit: res.totalEnergyCostUnit },
+                { title: "5. Control de Calidad y Ensayos de Laboratorio", monthly: res.qualityCostUnit * res.netMonthlyUnits, unit: res.qualityCostUnit },
+                { title: "6. Costos Fijos, Depreciación Equipos & Canon Arriendo", monthly: res.totalFixedMonthly, unit: res.fixedCostUnit },
+            ];
+
+            items.forEach(item => {
+                const pct = totalCost > 0 ? (item.unit / totalCost) * 100 : 0;
+                const row = document.createElement("tr");
+                row.className = "hover:bg-industrial-900/50";
+                row.innerHTML = `
+                    <td class="py-2.5 font-semibold text-slate-200 font-sans">${item.title}</td>
+                    <td class="py-2.5 text-right font-mono">${formatMoney(item.monthly)}</td>
+                    <td class="py-2.5 text-right font-mono text-gold-400 font-bold">${formatMoney(item.unit)}</td>
+                    <td class="py-2.5 text-right font-mono text-slate-400">${pct.toFixed(1)}%</td>
+                `;
+                body.appendChild(row);
+            });
+
+            // Fila Total
+            const totalRow = document.createElement("tr");
+            totalRow.className = "font-bold text-white border-t border-gold-500/40 text-xs";
+            totalRow.innerHTML = `
+                <td class="py-3 text-gold-400 uppercase font-sans">TOTAL COSTO DE PRODUCCIÓN / UNIDAD</td>
+                <td class="py-3 text-right font-mono">${formatMoney(res.unitProductionCost * res.netMonthlyUnits)}</td>
+                <td class="py-3 text-right font-mono text-gold-400 text-sm">${formatMoney(res.unitProductionCost)}</td>
+                <td class="py-3 text-right font-mono">100.0%</td>
+            `;
+            body.appendChild(totalRow);
+        }
+
+        // Exportar a CSV
+        function exportCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,ID,Variable,Valor,Unidad,Categoria,Descripcion\n";
+            variablesState.forEach(v => {
+                csvContent += `"${v.id}","${v.name.replace(/"/g, '""')}","${v.val}","${v.unit}","${v.cat}","${v.desc.replace(/"/g, '""')}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "pan_ralph_holsum_94_variables.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Cambiador de Pantallas / Tabs
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+            document.querySelectorAll(".tab-btn").forEach(el => {
+                el.classList.remove("bg-gold-500", "text-industrial-950", "shadow-md");
+                el.classList.add("text-slate-400");
+            });
+
+            document.getElementById(tabId).classList.remove("hidden");
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.add("bg-gold-500", "text-industrial-950", "shadow-md");
+            activeBtn.classList.remove("text-slate-400");
+
+            if (tabId === "tab-variables") {
+                renderVariablesGrid();
+            }
+        }
+
+        // INICIALIZACIÓN
+        window.onload = function() {
+            renderVariablesGrid();
+            updateUI();
+        };
+    </script>
+</body>
+</html>
